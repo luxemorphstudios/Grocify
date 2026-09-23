@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Create an account{% endblock %}
+
+{% block guest_content %}
+<div class="login-page">
+
+  <section class="login-art">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-5">
+        <span class="brand-mark"><i class="bi bi-basket2-fill"></i></span>
+        <strong class="fs-5">Grocify</strong>
+      </div>
+      <h2>Create your account.</h2>
+      <p>Choose the role that matches the work you do in the shop.</p>
+      <ul class="login-points">
+        <li><i class="bi bi-person-badge"></i>
+          <span><strong>Staff / Cashier</strong> - bill customers, look up
+            products and prices</span></li>
+        <li><i class="bi bi-shield-lock"></i>
+          <span><strong>Administrator</strong> - everything above, plus stock,
+            suppliers, reports and staff accounts</span></li>
+      </ul>
+    </div>
+    <small class="opacity-75">Grocery Store Management System</small>
+  </section>
+
+  <section class="login-form-wrap">
+    <div class="login-card">
+      <div class="d-flex justify-content-between align-items-start mb-4">
+        <div class="d-lg-none d-flex align-items-center gap-2">
+          <span class="brand-mark"><i class="bi bi-basket2-fill"></i></span>
+          <strong class="fs-5">Grocify</strong>
+        </div>
+        <button class="btn btn-icon ms-auto" id="themeToggle" aria-label="Switch theme">
+          <i class="bi bi-moon-stars"></i>
+        </button>
+      </div>
+
+      <h1 class="h4 fw-bold mb-1">Create an account</h1>
+      <p class="text-muted mb-4">It takes a moment. You can sign in straight after.</p>
+
+      {% include "_flash.html" %}
+
+      <form method="post" novalidate>
+        <div class="mb-3">
+          <label class="form-label" for="name">Full name</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input class="form-control" id="name" name="name" required autofocus
+                   value="{{ form.name }}" placeholder="e.g. Priya Nair">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="username">Username</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-at"></i></span>
+            <input class="form-control" id="username" name="username" required
+                   value="{{ form.username }}" autocomplete="username"
+                   minlength="3" maxlength="20" placeholder="priya">
+          </div>
+          <div class="form-text">3 to 20 characters: letters, numbers, dots or underscores.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="role">Role</label>
+          <select class="form-select" id="role" name="role">
+            <option value="staff" {{ 'selected' if form.role == 'staff' }}>
+              Staff / Cashier
+            </option>
+            <option value="admin" {{ 'selected' if form.role == 'admin' }}>
+              Administrator
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input class="form-control" id="password" name="password" type="password"
+                   required autocomplete="new-password" minlength="8"
+                   pattern=".*[^A-Za-z0-9\s].*"
+                   title="At least 8 characters, including one special character"
+                   placeholder="At least 8 characters">
+            <button class="btn btn-outline-secondary" type="button" id="togglePassword"
+                    aria-label="Show password"><i class="bi bi-eye"></i></button>
+          </div>
+          <div class="form-text" id="passwordHint">
+            At least 8 characters and one special character, such as ! @ # $ % or &amp;
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="confirm_password">Confirm password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+            <input class="form-control" id="confirm_password" name="confirm_password"
+                   type="password" required autocomplete="new-password"
+                   placeholder="Type it again">
+          </div>
+        </div>
+
+        <button class="btn btn-primary w-100 mb-3" type="submit">
+          <i class="bi bi-person-plus me-1"></i> Create account
+        </button>
+      </form>
+
+      <p class="text-center text-muted mb-0">
+        Already have an account?
+        <a href="{{ url_for('auth.login') }}" class="fw-semibold">Sign in</a>
+      </p>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("togglePassword").addEventListener("click", function () {
+    var field = document.getElementById("password");
+    var show = field.type === "password";
+    field.type = show ? "text" : "password";
+    this.innerHTML = show ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+  });
+
+  // Live feedback while typing. The server checks the same two rules again,
+  // because anything done in the browser can be bypassed.
+  var password = document.getElementById("password");
+  var confirm = document.getElementById("confirm_password");
+  var hint = document.getElementById("passwordHint");
+
+  function review() {
+    var value = password.value;
+    var longEnough = value.length >= 8;
+    var hasSpecial = /[^A-Za-z0-9\s]/.test(value);
+    if (!value) {
+      hint.className = "form-text";
+      hint.innerHTML = "At least 8 characters and one special character, " +
+                       "such as ! @ # $ % or &amp;";
+      return;
+    }
+    if (longEnough && hasSpecial) {
+      hint.className = "form-text text-success";
+      hint.textContent = "Looks good.";
+    } else {
+      hint.className = "form-text text-danger";
+      hint.textContent = !longEnough
+        ? "Too short - " + (8 - value.length) + " more character(s) needed."
+        : "Add one special character, such as ! @ # $ % or &.";
+    }
+  }
+
+  function matchCheck() {
+    confirm.setCustomValidity(
+      confirm.value && confirm.value !== password.value
+        ? "The two passwords do not match." : "");
+  }
+
+  password.addEventListener("input", function () { review(); matchCheck(); });
+  confirm.addEventListener("input", matchCheck);
+</script>
+{% endblock %}

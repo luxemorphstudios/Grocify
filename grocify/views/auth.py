@@ -3,8 +3,8 @@ from flask import (Blueprint, flash, g, redirect, render_template, request,
                    session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..db import execute, query
-from ..helpers import login_required
+from ..db import execute, now, query
+from ..helpers import login_required, validate_password, validate_username
 
 bp = Blueprint("auth", __name__)
 
@@ -36,6 +36,51 @@ def login():
     return render_template("login.html")
 
 
+@bp.route("/register", methods=("GET", "POST"))
+def register():
+    """Anyone can create an account from the sign-in page."""
+    if g.user is not None:
+        return redirect(url_for("dashboard.index"))
+
+    form = {"name": "", "username": "", "role": "staff"}
+
+    if request.method == "POST":
+        form = {
+            "name": request.form.get("name", "").strip(),
+            "username": request.form.get("username", "").strip().lower(),
+            "role": request.form.get("role", "staff"),
+        }
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+
+        error = None
+        if not form["name"]:
+            error = "Please enter your full name."
+        elif form["role"] not in ("admin", "staff"):
+            error = "Please choose a valid role."
+        else:
+            error = (validate_username(form["username"])
+                     or validate_password(password, confirm))
+            if error is None and query("SELECT 1 FROM users WHERE username = ?",
+                                       (form["username"],), one=True):
+                error = "That username is already taken. Please pick another."
+
+        if error:
+            flash(error, "danger")
+        else:
+            execute(
+                """INSERT INTO users (name, username, password_hash, role,
+                                      is_active, created_at)
+                   VALUES (?,?,?,?,1,?)""",
+                (form["name"], form["username"], generate_password_hash(password),
+                 form["role"], now()),
+            )
+            flash("Account created. You can sign in now.", "success")
+            return redirect(url_for("auth.login"))
+
+    return render_template("register.html", form=form)
+
+
 @bp.route("/logout")
 def logout():
     session.clear()
@@ -53,13 +98,10 @@ def account():
         confirm = request.form.get("confirm_password", "")
 
         row = query("SELECT password_hash FROM users WHERE id = ?", (g.user["id"],), one=True)
-        error = None
         if not check_password_hash(row["password_hash"], current):
             error = "Your current password is not correct."
-        elif len(new) < 4:
-            error = "The new password must be at least 4 characters."
-        elif new != confirm:
-            error = "The two new passwords do not match."
+        else:
+            error = validate_password(new, confirm)
 
         if error:
             flash(error, "danger")

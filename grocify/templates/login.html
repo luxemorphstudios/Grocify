@@ -65,11 +65,10 @@
         </button>
       </form>
 
-      <div class="demo-creds">
-        <div class="fw-semibold mb-1 text-body">Demo accounts</div>
-        Admin — <code>admin</code> / <code>admin123</code><br>
-        Staff — <code>priya</code> / <code>staff123</code>
-      </div>
+      <p class="text-center text-muted mb-0">
+        New here?
+        <a href="{{ url_for('auth.register') }}" class="fw-semibold">Create an account</a>
+      </p>
     </div>
   </section>
 </div>

@@ -134,6 +134,38 @@ def date_range(days=7):
     return [(end - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(days - 1, -1, -1)]
 
 
+PASSWORD_MIN_LENGTH = 8
+
+
+def validate_password(password, confirm=None):
+    """Check a new password against the rules. Returns an error, or None.
+
+    The rules are deliberately checked here on the server. The sign-up form
+    also checks them in the browser, but that is only for quick feedback - a
+    user can edit the page, so the server has to decide.
+    """
+    if len(password or "") < PASSWORD_MIN_LENGTH:
+        return ("The password must be at least %d characters long."
+                % PASSWORD_MIN_LENGTH)
+    if not any(not ch.isalnum() and not ch.isspace() for ch in password):
+        return ("The password must include at least one special character, "
+                "for example ! @ # $ % or &.")
+    if confirm is not None and password != confirm:
+        return "The two passwords do not match."
+    return None
+
+
+def validate_username(username):
+    """Usernames are lower case, 3-20 characters, letters/digits/dot/underscore."""
+    name = username or ""
+    if not 3 <= len(name) <= 20:
+        return "The username must be between 3 and 20 characters."
+    if not all(ch.isalnum() or ch in "._" for ch in name):
+        return ("The username can only contain letters, numbers, dots and "
+                "underscores.")
+    return None
+
+
 def hue(text):
     """A stable 0-359 hue for a name, used to colour its fallback thumbnail.
 

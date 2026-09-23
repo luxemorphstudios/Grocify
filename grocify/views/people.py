@@ -4,7 +4,7 @@ from flask import (Blueprint, abort, flash, g, redirect, render_template,
 from werkzeug.security import generate_password_hash
 
 from ..db import execute, now, query, save_setting, scalar
-from ..helpers import admin_required, parse_float
+from ..helpers import admin_required, parse_float, validate_password, validate_username
 
 bp = Blueprint("people", __name__)
 
@@ -80,12 +80,13 @@ def users():
         error = None
         if not name or not username:
             error = "Name and username are both required."
-        elif len(password) < 4:
-            error = "The password must be at least 4 characters."
         elif role not in ("admin", "staff"):
             error = "Please choose a valid role."
-        elif query("SELECT 1 FROM users WHERE username = ?", (username,), one=True):
-            error = "That username is already taken."
+        else:
+            error = validate_username(username) or validate_password(password)
+            if error is None and query("SELECT 1 FROM users WHERE username = ?",
+                                       (username,), one=True):
+                error = "That username is already taken."
 
         if error:
             flash(error, "danger")
@@ -132,9 +133,9 @@ def edit_user(uid):
 
     execute("UPDATE users SET name = ?, role = ? WHERE id = ?", (name, role, uid))
     if password:
-        if len(password) < 4:
-            flash("The password must be at least 4 characters - it was not changed.",
-                  "warning")
+        problem = validate_password(password)
+        if problem:
+            flash(problem + " The password was not changed.", "warning")
         else:
             execute("UPDATE users SET password_hash = ? WHERE id = ?",
                     (generate_password_hash(password), uid))

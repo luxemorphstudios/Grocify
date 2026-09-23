@@ -463,16 +463,6 @@ a { color: var(--link); text-decoration: none; }
 .login-card { width: 100%; max-width: 390px; }
 .login-card .brand-mark { width: 48px; height: 48px; font-size: 1.35rem; }
 
-.demo-creds {
-  background: var(--surface-2);
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-sm);
-  padding: .75rem .9rem;
-  font-size: .8rem;
-  color: var(--ink-soft);
-}
-.demo-creds code { color: var(--brand-dark); font-weight: 600; }
-[data-bs-theme="dark"] .demo-creds code { color: var(--brand); }
 
 @media (max-width: 991.98px) {
   .login-page { grid-template-columns: 1fr; }
