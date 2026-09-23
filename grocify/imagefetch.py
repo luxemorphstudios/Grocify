@@ -340,9 +340,10 @@ def write_credits(path):
     lines = [
         "# Photo credits",
         "",
-        "Product photos in this folder come from **Wikimedia Commons** and are used",
-        "under the licence shown next to each one. Each entry lists the file name,",
-        "the photographer and a link to the original page.",
+        "Product photos in this folder come from **Open Food Facts** (branded",
+        "packshots) and **Wikimedia Commons** (loose produce), used under the",
+        "licence shown next to each one. Each entry lists the file name, the",
+        "source or photographer, and a link to the original page.",
         "",
     ]
     for r in rows:

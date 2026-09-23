@@ -89,9 +89,19 @@ The catalogue photos were downloaded with a built-in command:
 python -m flask --app run.py fetch-images
 ```
 
-It searches **Wikimedia Commons**, keeps only openly licensed pictures (public
-domain, CC0, CC BY, CC BY-SA), centre-crops them to a square 600x600 JPEG so
-every tile lines up, and records the photographer and licence for each one.
+It uses two open sources:
+
+- **Open Food Facts** (plus its Open Beauty Facts and Open Products Facts
+  siblings) for branded, barcoded groceries - these are real packshots of the
+  actual packaging, the same kind of picture a shopping app shows. Photos there
+  are CC BY-SA 3.0.
+- **Wikimedia Commons** for loose items like vegetables and fruit, which have no
+  barcode and so are not in a product database. Only openly licensed pictures
+  are kept (public domain, CC0, CC BY, CC BY-SA).
+
+Packshots are padded onto a white 600x600 square (so a tall packet is not sliced
+in half) and produce photos are centre-cropped to the same size, so every tile
+lines up. The source and licence of each photo are recorded.
 Every photo is credited in
 [`grocify/static/uploads/products/CREDITS.md`](grocify/static/uploads/products/CREDITS.md)
 — keep that file if you publish the project, because CC BY / CC BY-SA require
@@ -111,11 +121,16 @@ python -m flask --app run.py fetch-images --only "Eggs"
 | `--candidate 1` | Skip the first search hit and take the next one |
 | `--force` | Replace photos that are already set |
 
-**A search engine is not a shop catalogue**, so check what you get. Roughly a
-third of the first results were wrong or unsuitable when this catalogue was
-built (a loaf of bread for wheat flour, an unrelated portrait for butter), and
-they were replaced by hand with `--terms`. Look at the products page after a
-fetch and re-run the odd ones.
+**Check what you get.** A search engine is not a shop catalogue. When this
+catalogue was built, roughly a third of the first Wikimedia results were wrong
+or unsuitable (a loaf of bread for wheat flour, an unrelated portrait for
+butter, and a set of early-1900s adverts with racist caricatures for washing
+powder). Every photo in this project was looked at before being kept. Do the
+same after a fetch and re-run the odd ones with `--terms`.
+
+Photos are **not** taken from Zepto, Blinkit, Amazon or BigBasket: those images
+are the retailers' copyrighted assets and scraping them breaches their terms.
+Open Food Facts gives the same packshot look, openly licensed.
 
 Downloaded photos are listed in `manifest.json` next to them, so running
 `seed-db` again **keeps every picture** instead of orphaning the files.
