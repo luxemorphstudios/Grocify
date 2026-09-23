@@ -30,6 +30,10 @@ Then open **http://127.0.0.1:5000**
 | Staff / Cashier | `priya` | `staff123` |
 | Staff / Cashier | `rahul` | `staff123` |
 
+These seeded accounts are **not** shown on the sign-in page. Anyone can also
+create their own account with **Create an account** on that page - see
+*Accounts and passwords* below.
+
 `seed-db` creates the tables **and** fills them with demo data (34 products,
 8 categories, 4 suppliers and ~140 bills spread over the last 30 days) so every
 screen and chart has something to show during your demo.
@@ -56,6 +60,32 @@ Want to start completely empty instead? Use `python -m flask --app run.py init-d
 
 Staff who try to open an admin page are redirected with a message — the check is
 on the server (`@admin_required`), not just hidden menu links.
+
+### Accounts and passwords
+
+The sign-in page has a **Create an account** link. Anyone can register, choose
+**Staff / Cashier** or **Administrator**, and sign in straight afterwards. An
+administrator can also create accounts from the *Staff accounts* page.
+
+A new password must be:
+
+- at least **8 characters** long, and
+- contain at least **one special character** (anything that is not a letter or
+  a digit, such as `! @ # $ % &`).
+
+The rules are checked twice: in the browser while you type, for instant
+feedback, and again on the server in `validate_password()`, which is the check
+that actually decides. Anything done in the browser can be bypassed by editing
+the page, so the server always has the final say.
+
+The seeded `admin` / `admin123` account predates these rules and still works --
+existing passwords are not forced to change. The moment that account sets a new
+password, the new rules apply.
+
+> **Worth knowing:** letting anyone register as an Administrator is convenient
+> for a class demo, but it means whoever can reach the app can give themselves
+> full control. For real use you would restrict the public form to Staff and
+> create admins only from the *Staff accounts* page.
 
 ### Product photos
 
@@ -206,7 +236,8 @@ Two design details worth mentioning in a viva:
    resets the shop to clean, believable data, and the product photos are
    re-attached automatically.
 5. **Change the demo passwords** from *Staff accounts* if your college expects
-   it, and set a real `SECRET_KEY` (environment variable `GROCIFY_SECRET_KEY`)
+   it - note the new password rules apply, so `admin123` will not be accepted
+   as a replacement. Set a real `SECRET_KEY` (environment variable `GROCIFY_SECRET_KEY`)
    if you ever host this publicly. For a local college project the built-in
    default is fine.
 6. **Put it on GitHub** so your team can work together:
