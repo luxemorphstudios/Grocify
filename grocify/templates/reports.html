@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block subheading %}{{ start|nice_date }} → {{ end|nice_date }}{% endblock %}
+
+{% block topbar %}
+  <a class="btn btn-light btn-sm"
+     href="{{ url_for('reports.export_csv', start=start, end=end) }}">
+    <i class="bi bi-download me-1"></i><span class="d-none d-sm-inline">Export CSV</span>
+  </a>
+  <button class="btn btn-light btn-sm" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i><span class="d-none d-sm-inline">Print</span>
+  </button>
+{% endblock %}
+
+{% block content %}
+
+<form class="card mb-3 no-print" method="get" id="rangeForm">
+  <div class="card-body filter-bar">
+    <div>
+      <label class="form-label" for="start">From</label>
+      <input class="form-control" id="start" name="start" type="date" value="{{ start }}">
+    </div>
+    <div>
+      <label class="form-label" for="end">To</label>
+      <input class="form-control" id="end" name="end" type="date" value="{{ end }}">
+    </div>
+    <div class="filter-actions hstack-wrap">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+      <button class="btn btn-light" type="button" data-range="today">Today</button>
+      <button class="btn btn-light" type="button" data-range="7">Last 7 days</button>
+      <button class="btn btn-light" type="button" data-range="month">This month</button>
+      <button class="btn btn-light" type="button" data-range="30">Last 30 days</button>
+    </div>
+  </div>
+</form>
+
+<div class="stat-grid mb-3">
+  <div class="stat">
+    <span class="stat-icon"><i class="bi bi-cash-stack"></i></span>
+    <div>
+      <div class="stat-label">Total revenue</div>
+      <div class="stat-value">{{ summary.revenue|money }}</div>
+      <div class="stat-note">GST collected {{ summary.gst|money }}</div>
+    </div>
+  </div>
+  <div class="stat">
+    <span class="stat-icon info"><i class="bi bi-receipt"></i></span>
+    <div>
+      <div class="stat-label">Bills</div>
+      <div class="stat-value">{{ summary.bills }}</div>
+      <div class="stat-note">Average {{ summary.average|money }}</div>
+    </div>
+  </div>
+  <div class="stat">
+    <span class="stat-icon warn"><i class="bi bi-basket"></i></span>
+    <div>
+      <div class="stat-label">Items sold</div>
+      <div class="stat-value">{{ summary.units|qty }}</div>
+      <div class="stat-note">Across all bills</div>
+    </div>
+  </div>
+  <div class="stat">
+    <span class="stat-icon danger"><i class="bi bi-percent"></i></span>
+    <div>
+      <div class="stat-label">Discounts given</div>
+      <div class="stat-value">{{ summary.discount|money }}</div>
+      <div class="stat-note">In this period</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-xl-8">
+    <div class="card h-100">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-graph-up me-1"></i> Daily sales</h2></div>
+      <div class="card-body">
+        {% if daily %}
+          <div class="chart-box"><canvas id="dailyChart"></canvas></div>
+        {% else %}
+          <div class="empty"><i class="bi bi-graph-up"></i><p>No sales in this period.</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="card h-100">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-pie-chart me-1"></i> Sales by category</h2></div>
+      <div class="card-body">
+        {% if by_category %}
+          <div class="chart-box-sm"><canvas id="categoryChart"></canvas></div>
+        {% else %}
+          <div class="empty"><i class="bi bi-pie-chart"></i><p>Nothing to show yet.</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-6">
+    <div class="card h-100 table-card">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-trophy me-1"></i> Best-selling products</h2></div>
+      {% if top_products %}
+        <div class="scroll-x">
+          <table class="table table-hover">
+            <thead>
+              <tr><th style="width:44px">#</th><th>Product</th><th class="num">Sold</th><th class="num">Revenue</th></tr>
+            </thead>
+            <tbody>
+              {% for p in top_products %}
+                <tr>
+                  <td class="text-muted">{{ loop.index }}</td>
+                  <td class="cell-title">{{ p.product_name }}</td>
+                  <td class="num">{{ p.sold|qty }} {{ p.unit }}</td>
+                  <td class="num fw-semibold">{{ p.revenue|money }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty"><i class="bi bi-box-seam"></i><p>No products sold in this period.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-xl-6">
+    <div class="card mb-3 table-card">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-person-badge me-1"></i> Sales by cashier</h2></div>
+      {% if by_staff %}
+        <div class="scroll-x">
+          <table class="table table-hover">
+            <thead><tr><th>Cashier</th><th class="num">Bills</th><th class="num">Revenue</th></tr></thead>
+            <tbody>
+              {% for s in by_staff %}
+                <tr>
+                  <td class="cell-title">{{ s.cashier }}</td>
+                  <td class="num">{{ s.bills }}</td>
+                  <td class="num fw-semibold">{{ s.revenue|money }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty"><i class="bi bi-person-badge"></i><p>No sales recorded.</p></div>
+      {% endif %}
+    </div>
+
+    <div class="card table-card">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-credit-card me-1"></i> Payment modes</h2></div>
+      {% if by_payment %}
+        <div class="scroll-x">
+          <table class="table table-hover">
+            <thead><tr><th>Mode</th><th class="num">Bills</th><th class="num">Revenue</th></tr></thead>
+            <tbody>
+              {% for p in by_payment %}
+                <tr>
+                  <td><span class="chip">{{ p.payment_mode }}</span></td>
+                  <td class="num">{{ p.bills }}</td>
+                  <td class="num fw-semibold">{{ p.revenue|money }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty"><i class="bi bi-credit-card"></i><p>No payments recorded.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var charts = {};
+
+  function drawCharts() {
+    var t = grocifyChartDefaults();
+    Object.keys(charts).forEach(function (k) { if (charts[k]) charts[k].destroy(); });
+
+    var dailyEl = document.getElementById("dailyChart");
+    if (dailyEl) {
+      charts.daily = new Chart(dailyEl, {
+        type: "line",
+        data: {
+          labels: {{ charts.daily_labels|tojson }},
+          datasets: [{
+            label: "Sales",
+            data: {{ charts.daily_values|tojson }},
+            borderColor: t.brand,
+            backgroundColor: "rgba(22,163,74,.14)",
+            fill: true,
+            tension: .35,
+            pointRadius: 3,
+            pointBackgroundColor: t.brand
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: t.text } },
+            y: { beginAtZero: true, grid: { color: t.grid }, ticks: { color: t.text } }
+          }
+        }
+      });
+    }
+
+    var catEl = document.getElementById("categoryChart");
+    if (catEl) {
+      charts.category = new Chart(catEl, {
+        type: "doughnut",
+        data: {
+          labels: {{ charts.category_labels|tojson }},
+          datasets: [{
+            data: {{ charts.category_values|tojson }},
+            backgroundColor: t.palette,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: "62%",
+          plugins: { legend: { position: "bottom", labels: { color: t.text, boxWidth: 12, padding: 12 } } }
+        }
+      });
+    }
+  }
+
+  drawCharts();
+  document.addEventListener("grocify:theme", drawCharts);
+
+  // Quick date-range buttons
+  document.querySelectorAll("[data-range]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var today = new Date();
+      var start = new Date();
+      var kind = btn.dataset.range;
+
+      if (kind === "today")       { start = today; }
+      else if (kind === "month")  { start = new Date(today.getFullYear(), today.getMonth(), 1); }
+      else                        { start.setDate(today.getDate() - (Number(kind) - 1)); }
+
+      var iso = function (d) {
+        return d.getFullYear() + "-" +
+               String(d.getMonth() + 1).padStart(2, "0") + "-" +
+               String(d.getDate()).padStart(2, "0");
+      };
+      document.getElementById("start").value = iso(start);
+      document.getElementById("end").value = iso(today);
+      document.getElementById("rangeForm").submit();
+    });
+  });
+</script>
+{% endblock %}

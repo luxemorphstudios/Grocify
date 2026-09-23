@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_thumb with context %}
+{% block title %}Dashboard{% endblock %}
+{% block subheading %}Today at a glance — {{ shop.shop_name }}{% endblock %}
+
+{% block topbar %}
+  <a href="{{ url_for('billing.counter') }}" class="btn btn-primary btn-sm d-none d-sm-inline-flex">
+    <i class="bi bi-plus-lg me-1"></i> New bill
+  </a>
+{% endblock %}
+
+{% block content %}
+
+<div class="stat-grid mb-3">
+  <div class="stat">
+    <span class="stat-icon"><i class="bi bi-currency-rupee"></i></span>
+    <div>
+      <div class="stat-label">Today's sales</div>
+      <div class="stat-value">{{ todays_total|money }}</div>
+      <div class="stat-note">{{ todays_bills }} bill{{ '' if todays_bills == 1 else 's' }} today</div>
+    </div>
+  </div>
+
+  <div class="stat">
+    <span class="stat-icon info"><i class="bi bi-box-seam"></i></span>
+    <div>
+      <div class="stat-label">Products</div>
+      <div class="stat-value">{{ total_products }}</div>
+      <div class="stat-note">Stock worth {{ stock_value|money }}</div>
+    </div>
+  </div>
+
+  <a class="stat text-reset" href="{{ url_for('products.index', status='low') }}">
+    <span class="stat-icon warn"><i class="bi bi-battery-half"></i></span>
+    <div>
+      <div class="stat-label">Low stock</div>
+      <div class="stat-value">{{ low_stock_count }}</div>
+      <div class="stat-note">At or below reorder level</div>
+    </div>
+  </a>
+
+  <a class="stat text-reset" href="{{ url_for('products.index', status='expiring') }}">
+    <span class="stat-icon danger"><i class="bi bi-calendar-x"></i></span>
+    <div>
+      <div class="stat-label">Expiring soon</div>
+      <div class="stat-value">{{ expiring_count }}</div>
+      <div class="stat-note">Within {{ warn_days }} days</div>
+    </div>
+  </a>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header">
+        <h2 class="card-title"><i class="bi bi-bar-chart me-1"></i> Sales — last 7 days</h2>
+      </div>
+      <div class="card-body">
+        <div class="chart-box"><canvas id="weekChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h2 class="card-title"><i class="bi bi-trophy me-1"></i> Top sellers</h2>
+        <span class="chip ms-auto">30 days</span>
+      </div>
+      <div class="card-body pt-2">
+        {% if top_products %}
+          {% for p in top_products %}
+            <div class="d-flex align-items-center gap-2 py-2 {{ '' if loop.last else 'border-bottom' }}"
+                 style="border-color: var(--line) !important">
+              <span class="chip chip-ok">{{ loop.index }}</span>
+              <div class="flex-grow-1 min-w-0">
+                <div class="cell-title text-truncate">{{ p.product_name }}</div>
+                <div class="cell-sub">{{ p.sold|qty }} sold</div>
+              </div>
+              <div class="num fw-semibold">{{ p.revenue|money }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty"><i class="bi bi-graph-up"></i><p>No sales in the last 30 days.</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-xl-6">
+    <div class="card h-100 table-card">
+      <div class="card-header">
+        <h2 class="card-title text-warning"><i class="bi bi-exclamation-triangle me-1"></i> Low stock alerts</h2>
+        <a href="{{ url_for('products.index', status='low') }}" class="btn btn-sm btn-light ms-auto">View all</a>
+      </div>
+      {% if low_stock %}
+        <div class="scroll-x">
+          <table class="table table-hover">
+            <thead>
+              <tr><th>Product</th><th class="num">In stock</th><th class="num">Reorder at</th></tr>
+            </thead>
+            <tbody>
+              {% for p in low_stock %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      {{ product_thumb(p.name, p.image, 34) }}
+                      <div class="min-w-0">
+                        <div class="cell-title">{{ p.name }}</div>
+                        <div class="cell-sub">{{ p.category or 'Uncategorised' }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="num">
+                    {% if p.quantity <= 0 %}
+                      <span class="chip chip-danger">Out of stock</span>
+                    {% else %}
+                      <span class="chip chip-warn">{{ p.quantity|qty }} {{ p.unit }}</span>
+                    {% endif %}
+                  </td>
+                  <td class="num text-muted">{{ p.min_stock|qty }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty"><i class="bi bi-check2-circle"></i><p>Every product is above its reorder level.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-xl-6">
+    <div class="card h-100 table-card">
+      <div class="card-header">
+        <h2 class="card-title text-danger"><i class="bi bi-calendar-x me-1"></i> Expiring within {{ warn_days }} days</h2>
+        <a href="{{ url_for('products.index', status='expiring') }}" class="btn btn-sm btn-light ms-auto">View all</a>
+      </div>
+      {% if expiring %}
+        <div class="scroll-x">
+          <table class="table table-hover">
+            <thead>
+              <tr><th>Product</th><th class="num">Stock</th><th class="num">Expiry</th></tr>
+            </thead>
+            <tbody>
+              {% for p in expiring %}
+                {% set left = days_until(p.expiry_date) %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      {{ product_thumb(p.name, p.image, 34) }}
+                      <div class="min-w-0">
+                        <div class="cell-title">{{ p.name }}</div>
+                        <div class="cell-sub">{{ p.category or 'Uncategorised' }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="num">{{ p.quantity|qty }} {{ p.unit }}</td>
+                  <td class="num">
+                    {% if left is not none and left < 0 %}
+                      <span class="chip chip-danger">Expired</span>
+                    {% else %}
+                      <span class="chip chip-warn">{{ left }} day{{ '' if left == 1 else 's' }}</span>
+                    {% endif %}
+                    <div class="cell-sub">{{ p.expiry_date|nice_date }}</div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty"><i class="bi bi-check2-circle"></i><p>Nothing is expiring soon.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card table-card">
+  <div class="card-header">
+    <h2 class="card-title"><i class="bi bi-receipt me-1"></i> Recent bills</h2>
+    <a href="{{ url_for('billing.bills') }}" class="btn btn-sm btn-light ms-auto">All bills</a>
+  </div>
+  {% if recent_sales %}
+    <div class="scroll-x">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Invoice</th><th>Customer</th><th>Cashier</th>
+            <th>Payment</th><th class="num">Amount</th><th class="num">Time</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in recent_sales %}
+            <tr>
+              <td class="cell-title">{{ s.invoice_no }}</td>
+              <td>{{ s.customer_name or 'Walk-in' }}</td>
+              <td class="text-muted">{{ s.cashier or '—' }}</td>
+              <td><span class="chip">{{ s.payment_mode }}</span></td>
+              <td class="num fw-semibold">{{ s.total_amount|money }}</td>
+              <td class="num text-muted">{{ s.created_at|nice_datetime }}</td>
+              <td class="num">
+                <a class="btn btn-sm btn-light" href="{{ url_for('billing.invoice', sale_id=s.id) }}">
+                  <i class="bi bi-eye"></i>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">
+      <i class="bi bi-receipt"></i>
+      <p>No bills yet.</p>
+      <a href="{{ url_for('billing.counter') }}" class="btn btn-primary btn-sm">Create the first bill</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var weekChart;
+  function drawWeekChart() {
+    var t = grocifyChartDefaults();
+    var ctx = document.getElementById("weekChart");
+    if (weekChart) weekChart.destroy();
+    weekChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: {{ chart.labels|tojson }},
+        datasets: [{
+          label: "Sales",
+          data: {{ chart.totals|tojson }},
+          backgroundColor: t.brand,
+          borderRadius: 6,
+          maxBarThickness: 46
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: t.text } },
+          y: { beginAtZero: true, grid: { color: t.grid }, ticks: { color: t.text } }
+        }
+      }
+    });
+  }
+  drawWeekChart();
+  document.addEventListener("grocify:theme", drawWeekChart);
+</script>
+{% endblock %}

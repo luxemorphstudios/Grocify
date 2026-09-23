@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+
+{% block guest_content %}
+<div class="login-page">
+
+  <section class="login-art">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-5">
+        <span class="brand-mark"><i class="bi bi-basket2-fill"></i></span>
+        <strong class="fs-5">Grocify</strong>
+      </div>
+      <h2>Run your grocery store from one screen.</h2>
+      <p>Billing, stock, expiry alerts and sales reports - all in one place.</p>
+      <ul class="login-points">
+        <li><i class="bi bi-check-circle-fill"></i><span>Fast billing counter with live totals</span></li>
+        <li><i class="bi bi-check-circle-fill"></i><span>Stock updates itself on every sale</span></li>
+        <li><i class="bi bi-check-circle-fill"></i><span>Low-stock and expiry warnings</span></li>
+        <li><i class="bi bi-check-circle-fill"></i><span>Daily and monthly sales reports</span></li>
+      </ul>
+    </div>
+    <small class="opacity-75">Grocery Store Management System</small>
+  </section>
+
+  <section class="login-form-wrap">
+    <div class="login-card">
+      <div class="d-flex justify-content-between align-items-start mb-4">
+        <div class="d-lg-none d-flex align-items-center gap-2">
+          <span class="brand-mark"><i class="bi bi-basket2-fill"></i></span>
+          <strong class="fs-5">Grocify</strong>
+        </div>
+        <button class="btn btn-icon ms-auto" id="themeToggle" aria-label="Switch theme">
+          <i class="bi bi-moon-stars"></i>
+        </button>
+      </div>
+
+      <h1 class="h4 fw-bold mb-1">Welcome back</h1>
+      <p class="text-muted mb-4">Sign in to continue to the store dashboard.</p>
+
+      {% include "_flash.html" %}
+
+      <form method="post" novalidate>
+        <div class="mb-3">
+          <label class="form-label" for="username">Username</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input class="form-control" id="username" name="username" required autofocus
+                   autocomplete="username" placeholder="admin">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input class="form-control" id="password" name="password" type="password"
+                   required autocomplete="current-password" placeholder="••••••••">
+            <button class="btn btn-outline-secondary" type="button" id="togglePassword"
+                    aria-label="Show password"><i class="bi bi-eye"></i></button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary w-100 mb-3" type="submit">
+          <i class="bi bi-box-arrow-in-right me-1"></i> Sign in
+        </button>
+      </form>
+
+      <div class="demo-creds">
+        <div class="fw-semibold mb-1 text-body">Demo accounts</div>
+        Admin — <code>admin</code> / <code>admin123</code><br>
+        Staff — <code>priya</code> / <code>staff123</code>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("togglePassword").addEventListener("click", function () {
+    var field = document.getElementById("password");
+    var show = field.type === "password";
+    field.type = show ? "text" : "password";
+    this.innerHTML = show ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% macro nav_link(endpoint, icon, label) %}
+  <a href="{{ url_for(endpoint) }}"
+     class="nav-item {{ 'active' if request.endpoint == endpoint }}">
+    <i class="bi {{ icon }}"></i><span>{{ label }}</span>
+  </a>
+{% endmacro %}
+
+{# Product picture, or a coloured initial when there is no picture yet. #}
+{% macro product_thumb(name, image, size=42) %}
+  {% if image %}
+    <img class="thumb" style="--thumb-size: {{ size }}px"
+         src="{{ url_for('static', filename='uploads/products/' ~ image) }}"
+         alt="{{ name }}" loading="lazy">
+  {% else %}
+    <span class="thumb thumb-fallback"
+          style="--thumb-size: {{ size }}px; --hue: {{ hue(name) }}"
+          aria-hidden="true">{{ name[0]|upper }}</span>
+  {% endif %}
+{% endmacro %}

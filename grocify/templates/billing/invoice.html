@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Bill {{ sale.invoice_no }}{% endblock %}
+{% block subheading %}{{ sale.created_at|nice_datetime }}{% endblock %}
+
+{% block topbar %}
+  <button class="btn btn-primary btn-sm" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i><span class="d-none d-sm-inline">Print</span>
+  </button>
+  <a class="btn btn-light btn-sm" href="{{ url_for('billing.counter') }}">
+    <i class="bi bi-plus-lg me-1"></i><span class="d-none d-sm-inline">New bill</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="invoice-sheet">
+
+  <div class="invoice-head">
+    <div class="invoice-shop">
+      <h2>{{ shop.shop_name }}</h2>
+      <p>{{ shop.shop_address }}</p>
+      <p>Phone: {{ shop.shop_phone }}</p>
+    </div>
+    <div class="invoice-meta">
+      <div class="inv-no">{{ sale.invoice_no }}</div>
+      <div class="text-muted">{{ sale.created_at|nice_datetime }}</div>
+      <div class="text-muted">Cashier: {{ sale.cashier or '—' }}</div>
+      <div class="text-muted">Payment: {{ sale.payment_mode }}</div>
+    </div>
+  </div>
+
+  <div class="invoice-divider"></div>
+
+  <div class="row g-3 mb-2">
+    <div class="col-sm-6">
+      <div class="stat-label">Billed to</div>
+      <div class="fw-semibold">{{ sale.customer_name or 'Walk-in customer' }}</div>
+      {% if sale.customer_phone %}<div class="text-muted">{{ sale.customer_phone }}</div>{% endif %}
+    </div>
+    <div class="col-sm-6 text-sm-end">
+      <div class="stat-label">Items</div>
+      <div class="fw-semibold">{{ items|length }} product{{ '' if items|length == 1 else 's' }}</div>
+    </div>
+  </div>
+
+  <div class="scroll-x mt-3">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th>Item</th>
+          <th class="num">Rate</th>
+          <th class="num">Qty</th>
+          <th class="num">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in items %}
+          <tr>
+            <td class="text-muted">{{ loop.index }}</td>
+            <td class="cell-title">{{ i.product_name }}</td>
+            <td class="num">{{ i.price|money }}</td>
+            <td class="num">{{ i.quantity|qty }} {{ i.unit }}</td>
+            <td class="num fw-semibold">{{ i.line_total|money }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="invoice-total-box mt-3">
+    <div class="totals-row"><span class="text-muted">Subtotal</span><span>{{ sale.subtotal|money }}</span></div>
+    {% if sale.discount %}
+      <div class="totals-row"><span class="text-muted">Discount</span><span>−{{ sale.discount|money }}</span></div>
+    {% endif %}
+    <div class="totals-row">
+      <span class="text-muted">GST ({{ sale.gst_rate|qty }}%)</span><span>{{ sale.gst_amount|money }}</span>
+    </div>
+    <div class="totals-row grand"><span>Total</span><span>{{ sale.total_amount|money }}</span></div>
+  </div>
+
+  <div class="invoice-foot">
+    <div>Thank you for shopping with us!</div>
+    <div>This is a computer-generated bill.</div>
+  </div>
+</div>
+
+<div class="text-center mt-3 no-print">
+  <a class="btn btn-light btn-sm" href="{{ url_for('billing.bills') }}">
+    <i class="bi bi-arrow-left me-1"></i>Back to all bills
+  </a>
+</div>
+{% endblock %}

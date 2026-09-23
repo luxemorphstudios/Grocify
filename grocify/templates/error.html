@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Error {{ code }}{% endblock %}
+
+{% block content %}{% include "_error_body.html" %}{% endblock %}
+
+{% block guest_content %}
+  <div class="container" style="max-width: 560px">{% include "_error_body.html" %}</div>
+{% endblock %}

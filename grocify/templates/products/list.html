@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_thumb with context %}
+{% block title %}Products{% endblock %}
+{% block subheading %}{{ items|length }} product{{ '' if items|length == 1 else 's' }}
+  · stock value {{ total_value|money }}{% endblock %}
+
+{% block topbar %}
+  {% if g.user.role == 'admin' %}
+    <a href="{{ url_for('products.create') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i><span class="d-none d-sm-inline">Add product</span>
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<form class="card mb-3" method="get">
+  <div class="card-body filter-bar">
+    <div class="filter-search">
+      <label class="form-label" for="q">Search</label>
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" id="q" name="q" value="{{ q }}" placeholder="Product name...">
+      </div>
+    </div>
+
+    <div>
+      <label class="form-label" for="category">Category</label>
+      <select class="form-select" id="category" name="category" data-autosubmit>
+        <option value="">All categories</option>
+        {% for c in categories %}
+          <option value="{{ c.id }}" {{ 'selected' if category_id == c.id|string }}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" for="status">Status</label>
+      <select class="form-select" id="status" name="status" data-autosubmit>
+        <option value="all"      {{ 'selected' if status == 'all' }}>All products</option>
+        <option value="low"      {{ 'selected' if status == 'low' }}>Low stock</option>
+        <option value="out"      {{ 'selected' if status == 'out' }}>Out of stock</option>
+        <option value="expiring" {{ 'selected' if status == 'expiring' }}>Expiring in {{ warn_days }} days</option>
+        <option value="expired"  {{ 'selected' if status == 'expired' }}>Already expired</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" for="sort">Sort by</label>
+      <select class="form-select" id="sort" name="sort" data-autosubmit>
+        <option value="name"   {{ 'selected' if sort == 'name' }}>Name (A–Z)</option>
+        <option value="stock"  {{ 'selected' if sort == 'stock' }}>Stock (low first)</option>
+        <option value="price"  {{ 'selected' if sort == 'price' }}>Price (high first)</option>
+        <option value="expiry" {{ 'selected' if sort == 'expiry' }}>Expiry (soonest)</option>
+        <option value="newest" {{ 'selected' if sort == 'newest' }}>Recently added</option>
+      </select>
+    </div>
+
+    <div class="filter-actions hstack-wrap">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Filter</button>
+      <a class="btn btn-light" href="{{ url_for('products.index') }}">Reset</a>
+    </div>
+  </div>
+</form>
+
+<div class="card table-card">
+  {% if items %}
+    <div class="scroll-x">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th class="d-none d-xxl-table-cell">Supplier</th>
+            <th class="num">Price</th>
+            <th class="num">Stock</th>
+            <th class="num">Expiry</th>
+            {% if g.user.role == 'admin' %}<th class="num">Actions</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in items %}
+            {% set left = days_until(p.expiry_date) %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  {{ product_thumb(p.name, p.image, 42) }}
+                  <div class="min-w-0">
+                    <div class="cell-title">{{ p.name }}</div>
+                    <div class="cell-sub d-xxl-none">{{ p.supplier or 'No supplier' }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="chip">{{ p.category or 'Uncategorised' }}</span></td>
+              <td class="d-none d-xxl-table-cell text-muted">{{ p.supplier or '—' }}</td>
+              <td class="num">
+                <div class="fw-semibold">{{ p.price|money }}</div>
+                <div class="cell-sub">per {{ p.unit }}</div>
+              </td>
+              <td class="num">
+                {% if p.quantity <= 0 %}
+                  <span class="chip chip-danger">Out of stock</span>
+                {% elif p.quantity <= p.min_stock %}
+                  <span class="chip chip-warn">{{ p.quantity|qty }} {{ p.unit }}</span>
+                {% else %}
+                  <span class="chip chip-ok">{{ p.quantity|qty }} {{ p.unit }}</span>
+                {% endif %}
+                <div class="cell-sub">min {{ p.min_stock|qty }}</div>
+              </td>
+              <td class="num">
+                {% if not p.expiry_date %}
+                  <span class="text-muted">—</span>
+                {% elif left < 0 %}
+                  <span class="chip chip-danger">Expired</span>
+                  <div class="cell-sub">{{ p.expiry_date|nice_date }}</div>
+                {% elif left <= warn_days %}
+                  <span class="chip chip-warn">{{ left }} day{{ '' if left == 1 else 's' }}</span>
+                  <div class="cell-sub">{{ p.expiry_date|nice_date }}</div>
+                {% else %}
+                  <span>{{ p.expiry_date|nice_date }}</span>
+                {% endif %}
+              </td>
+              {% if g.user.role == 'admin' %}
+                <td class="num">
+                  <div class="d-inline-flex gap-1">
+                    <a class="btn btn-sm btn-light" title="Edit"
+                       href="{{ url_for('products.edit', pid=p.id) }}"><i class="bi bi-pencil"></i></a>
+                    <form method="post" action="{{ url_for('products.delete', pid=p.id) }}"
+                          data-confirm="Delete “{{ p.name }}”? Past bills will not be affected.">
+                      <button class="btn btn-sm btn-light text-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">
+      <i class="bi bi-box-seam"></i>
+      <p>No products match these filters.</p>
+      {% if g.user.role == 'admin' %}
+        <a href="{{ url_for('products.create') }}" class="btn btn-primary btn-sm">
+          <i class="bi bi-plus-lg me-1"></i>Add a product
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

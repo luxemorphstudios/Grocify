@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+{% block subheading %}Group products so they are easy to find and report on{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <div class="col-lg-4">
+    <form method="post" class="card">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-plus-circle me-1"></i> New category</h2></div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label" for="name">Name <span class="text-danger">*</span></label>
+          <input class="form-control" id="name" name="name" required placeholder="e.g. Dairy">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="description">Description</label>
+          <textarea class="form-control" id="description" name="description" rows="2"
+                    placeholder="Milk, curd, butter..."></textarea>
+        </div>
+        <button class="btn btn-primary w-100" type="submit">
+          <i class="bi bi-check-lg me-1"></i>Add category
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card table-card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="bi bi-tags me-1"></i> All categories</h2>
+        <span class="chip ms-auto">{{ items|length }}</span>
+      </div>
+
+      {% if items %}
+        <div class="scroll-x">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th class="num">Products</th>
+                <th class="num d-none d-md-table-cell">Stock value</th>
+                <th class="num">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in items %}
+                <tr>
+                  <td>
+                    <div class="cell-title">{{ c.name }}</div>
+                    {% if c.description %}<div class="cell-sub">{{ c.description }}</div>{% endif %}
+                  </td>
+                  <td class="num">
+                    <a class="chip chip-info" href="{{ url_for('products.index', category=c.id) }}">
+                      {{ c.product_count }}
+                    </a>
+                  </td>
+                  <td class="num d-none d-md-table-cell">{{ c.stock_value|money }}</td>
+                  <td class="num">
+                    <div class="d-inline-flex gap-1">
+                      <button class="btn btn-sm btn-light" title="Edit"
+                              data-bs-toggle="modal" data-bs-target="#editCategory"
+                              data-field-name="{{ c.name }}"
+                              data-field-description="{{ c.description or '' }}"
+                              data-action="{{ url_for('products.edit_category', cid=c.id) }}">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <form method="post" action="{{ url_for('products.delete_category', cid=c.id) }}"
+                            data-confirm="Delete the category “{{ c.name }}”?">
+                        <button class="btn btn-sm btn-light text-danger" title="Delete">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty"><i class="bi bi-tags"></i><p>No categories yet. Add your first one.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editCategory" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" method="post">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit category</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="edit-cat-name">Name</label>
+          <input class="form-control" id="edit-cat-name" name="name" data-fill="name" required>
+        </div>
+        <div>
+          <label class="form-label" for="edit-cat-desc">Description</label>
+          <textarea class="form-control" id="edit-cat-desc" name="description"
+                    data-fill="description" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

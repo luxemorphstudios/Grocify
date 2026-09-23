@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Bills{% endblock %}
+{% block subheading %}{{ bills|length }} bill{{ '' if bills|length == 1 else 's' }}
+  · {{ grand_total|money }}{% endblock %}
+
+{% block topbar %}
+  <a href="{{ url_for('billing.counter') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i><span class="d-none d-sm-inline">New bill</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+
+<form class="card mb-3" method="get">
+  <div class="card-body filter-bar">
+    <div class="filter-search">
+      <label class="form-label" for="q">Search</label>
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" id="q" name="q" value="{{ q }}"
+               placeholder="Invoice number, customer or phone">
+      </div>
+    </div>
+    <div>
+      <label class="form-label" for="start">From</label>
+      <input class="form-control" id="start" name="start" type="date" value="{{ start }}">
+    </div>
+    <div>
+      <label class="form-label" for="end">To</label>
+      <input class="form-control" id="end" name="end" type="date" value="{{ end }}">
+    </div>
+    <div class="filter-actions hstack-wrap">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Filter</button>
+      <a class="btn btn-light" href="{{ url_for('billing.bills') }}">Reset</a>
+    </div>
+  </div>
+</form>
+
+<div class="card table-card">
+  {% if bills %}
+    <div class="scroll-x">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            <th>Date &amp; time</th>
+            <th>Customer</th>
+            <th class="d-none d-lg-table-cell">Cashier</th>
+            <th class="num d-none d-md-table-cell">Items</th>
+            <th class="d-none d-sm-table-cell">Payment</th>
+            <th class="num">Total</th>
+            <th class="num">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in bills %}
+            <tr>
+              <td class="cell-title">{{ s.invoice_no }}</td>
+              <td class="text-muted">{{ s.created_at|nice_datetime }}</td>
+              <td>
+                <div>{{ s.customer_name or 'Walk-in' }}</div>
+                {% if s.customer_phone %}<div class="cell-sub">{{ s.customer_phone }}</div>{% endif %}
+              </td>
+              <td class="d-none d-lg-table-cell text-muted">{{ s.cashier or '—' }}</td>
+              <td class="num d-none d-md-table-cell">{{ s.item_count }}</td>
+              <td class="d-none d-sm-table-cell"><span class="chip">{{ s.payment_mode }}</span></td>
+              <td class="num">
+                <div class="fw-semibold">{{ s.total_amount|money }}</div>
+                {% if s.discount %}<div class="cell-sub">−{{ s.discount|money }} off</div>{% endif %}
+              </td>
+              <td class="num">
+                <div class="d-inline-flex gap-1">
+                  <a class="btn btn-sm btn-light" title="View bill"
+                     href="{{ url_for('billing.invoice', sale_id=s.id) }}"><i class="bi bi-eye"></i></a>
+                  {% if g.user.role == 'admin' %}
+                    <form method="post" action="{{ url_for('billing.delete_bill', sale_id=s.id) }}"
+                          data-confirm="Cancel {{ s.invoice_no }}? The items go back into stock.">
+                      <button class="btn btn-sm btn-light text-danger" title="Cancel bill">
+                        <i class="bi bi-x-circle"></i>
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">
+      <i class="bi bi-receipt"></i>
+      <p>No bills found for these filters.</p>
+      <a href="{{ url_for('billing.counter') }}" class="btn btn-primary btn-sm">Go to billing counter</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

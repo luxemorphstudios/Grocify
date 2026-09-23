@@ -1,0 +1,9 @@
+# Keep line endings consistent across Windows / macOS / Linux checkouts
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.sqlite binary

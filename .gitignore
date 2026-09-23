@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Flask instance folder (holds the SQLite database)
+instance/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

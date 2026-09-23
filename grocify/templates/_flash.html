@@ -1,0 +1,19 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-stack no-print">
+      {% for category, message in messages %}
+        {% set icon = {'success': 'bi-check-circle-fill',
+                       'danger':  'bi-exclamation-octagon-fill',
+                       'warning': 'bi-exclamation-triangle-fill',
+                       'info':    'bi-info-circle-fill'}.get(category, 'bi-info-circle-fill') %}
+        <div class="alert alert-{{ category }} alert-dismissible alert-auto d-flex align-items-center gap-2"
+             role="alert">
+          <i class="bi {{ icon }}"></i>
+          <span>{{ message }}</span>
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"
+                  aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}My account{% endblock %}
+{% block subheading %}Signed in as {{ g.user.username }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center g-3">
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-person me-1"></i> Profile</h2></div>
+      <div class="card-body text-center">
+        <span class="avatar mx-auto mb-2" style="width:64px;height:64px;flex-basis:64px;font-size:1.5rem">
+          {{ g.user.name[0]|upper }}
+        </span>
+        <div class="fw-semibold fs-5">{{ g.user.name }}</div>
+        <div class="text-muted">@{{ g.user.username }}</div>
+        <div class="mt-2">
+          <span class="chip {{ 'chip-ok' if g.user.role == 'admin' }}">
+            {{ 'Administrator' if g.user.role == 'admin' else 'Staff / Cashier' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <form method="post" class="card h-100">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-key me-1"></i> Change password</h2></div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label" for="current_password">Current password</label>
+          <input class="form-control" id="current_password" name="current_password"
+                 type="password" required autocomplete="current-password">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="new_password">New password</label>
+          <input class="form-control" id="new_password" name="new_password"
+                 type="password" required autocomplete="new-password">
+          <div class="form-text">At least 4 characters.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="confirm_password">Confirm new password</label>
+          <input class="form-control" id="confirm_password" name="confirm_password"
+                 type="password" required autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i>Update password</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

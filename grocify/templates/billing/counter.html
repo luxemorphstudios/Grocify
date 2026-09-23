@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Billing counter{% endblock %}
+{% block subheading %}Today: {{ todays_bills }} bill{{ '' if todays_bills == 1 else 's' }}
+  · {{ todays_total|money }}{% endblock %}
+
+{% block topbar %}
+  <a href="{{ url_for('billing.bills') }}" class="btn btn-light btn-sm d-none d-sm-inline-flex">
+    <i class="bi bi-receipt me-1"></i> Bills
+  </a>
+{% endblock %}
+
+{% block content %}
+<div id="pos" data-url="{{ url_for('products.api_products') }}"
+     data-currency="{{ shop.currency }}"
+     data-image-base="{{ url_for('static', filename='uploads/products') }}/">
+
+  <div class="pos-grid">
+
+    {# ------------------------------------------------------- catalogue #}
+    <div class="card pos-catalogue">
+      <div class="card-header">
+        <div class="input-group" style="max-width: 420px">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input class="form-control" id="posSearch" autocomplete="off"
+                 placeholder="Search products — press Enter to add the first match">
+        </div>
+        <select class="form-select ms-auto" id="posCategory" style="max-width: 220px">
+          <option value="">All categories</option>
+          {% for c in categories %}<option value="{{ c.name }}">{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+
+      <div class="card-body">
+        <div class="alert alert-warning py-2 px-3 d-none" id="stockNote"></div>
+        <div class="product-grid" id="posGrid">
+          <div class="empty" style="grid-column:1/-1">
+            <i class="bi bi-hourglass-split"></i><p>Loading products…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ------------------------------------------------------------ cart #}
+    <form class="card cart-panel" id="checkoutForm" method="post"
+          action="{{ url_for('billing.checkout') }}">
+      <input type="hidden" name="items" id="cartPayload">
+
+      <div class="card-header">
+        <h2 class="card-title"><i class="bi bi-cart3 me-1"></i> Current bill</h2>
+        <span class="chip chip-ok ms-auto"><span id="cartCount">0</span> items</span>
+        <button type="button" class="btn btn-sm btn-light" id="clearCart" title="Clear cart">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="card-body pt-2 pb-0">
+        <div class="cart-items" id="cartItems"></div>
+      </div>
+
+      <div class="card-body pt-3">
+        <div class="row g-2 mb-3">
+          <div class="col-7">
+            <label class="form-label" for="customer_name">Customer (optional)</label>
+            <input class="form-control form-control-sm" id="customer_name"
+                   name="customer_name" placeholder="Walk-in">
+          </div>
+          <div class="col-5">
+            <label class="form-label" for="customer_phone">Phone</label>
+            <input class="form-control form-control-sm" id="customer_phone"
+                   name="customer_phone" placeholder="Optional">
+          </div>
+
+          <div class="col-6">
+            <label class="form-label" for="discountInput">Discount</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text">{{ shop.currency }}</span>
+              <input class="form-control" id="discountInput" name="discount"
+                     type="number" step="0.01" min="0" value="0">
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="gstRateInput">GST rate</label>
+            <div class="input-group input-group-sm">
+              <input class="form-control" id="gstRateInput" name="gst_rate"
+                     type="number" step="0.01" min="0" value="{{ gst_rate }}">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Payment mode</label>
+            <div class="hstack-wrap">
+              {% for mode in PAYMENT_MODES %}
+                <input type="radio" class="btn-check" name="payment_mode" value="{{ mode }}"
+                       id="pay{{ mode }}" {{ 'checked' if loop.first }}>
+                <label class="btn btn-sm btn-outline-secondary" for="pay{{ mode }}">{{ mode }}</label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="totals-row"><span class="text-muted">Subtotal</span><span id="sumSubtotal">—</span></div>
+        <div class="totals-row"><span class="text-muted" id="sumGstLabel">GST</span><span id="sumGst">—</span></div>
+        <div class="totals-row grand"><span>Total</span><span id="sumTotal">—</span></div>
+
+        <button class="btn btn-primary w-100 mt-3" id="checkoutBtn" type="submit" disabled>
+          <i class="bi bi-check2-circle me-1"></i> Save bill &amp; print
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pos.js') }}"></script>
+{% endblock %}

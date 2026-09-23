@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Staff accounts{% endblock %}
+{% block subheading %}Admins manage everything; staff can only bill and view products{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <div class="col-lg-4">
+    <form method="post" class="card">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-person-plus me-1"></i> New account</h2></div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label" for="name">Full name <span class="text-danger">*</span></label>
+          <input class="form-control" id="name" name="name" required placeholder="e.g. Priya Nair">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="username">Username <span class="text-danger">*</span></label>
+          <input class="form-control" id="username" name="username" required
+                 autocomplete="off" placeholder="priya">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="password">Password <span class="text-danger">*</span></label>
+          <input class="form-control" id="password" name="password" type="text"
+                 required autocomplete="new-password" placeholder="At least 4 characters">
+          <div class="form-text">Stored as a secure hash — it is never saved in plain text.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="role">Role</label>
+          <select class="form-select" id="role" name="role">
+            <option value="staff">Staff / Cashier</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
+        <button class="btn btn-primary w-100" type="submit">
+          <i class="bi bi-check-lg me-1"></i>Create account
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card table-card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="bi bi-person-badge me-1"></i> All accounts</h2>
+        <span class="chip ms-auto">{{ items|length }}</span>
+      </div>
+
+      <div class="scroll-x">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th class="num d-none d-md-table-cell">Bills</th>
+              <th>Status</th>
+              <th class="num">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in items %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="avatar avatar-sm">{{ u.name[0]|upper }}</span>
+                    <div>
+                      <div class="cell-title">
+                        {{ u.name }}
+                        {% if u.id == g.user.id %}<span class="chip chip-info ms-1">You</span>{% endif %}
+                      </div>
+                      <div class="cell-sub">@{{ u.username }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="chip {{ 'chip-ok' if u.role == 'admin' }}">
+                    {{ 'Administrator' if u.role == 'admin' else 'Staff' }}
+                  </span>
+                </td>
+                <td class="num d-none d-md-table-cell">{{ u.bill_count }}</td>
+                <td>
+                  {% if u.is_active %}
+                    <span class="chip chip-ok">Active</span>
+                  {% else %}
+                    <span class="chip chip-danger">Disabled</span>
+                  {% endif %}
+                </td>
+                <td class="num">
+                  <div class="d-inline-flex gap-1">
+                    <button class="btn btn-sm btn-light" title="Edit"
+                            data-bs-toggle="modal" data-bs-target="#editUser"
+                            data-field-name="{{ u.name }}"
+                            data-field-role="{{ u.role }}"
+                            data-action="{{ url_for('people.edit_user', uid=u.id) }}">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <form method="post" action="{{ url_for('people.toggle_user', uid=u.id) }}">
+                      <button class="btn btn-sm btn-light"
+                              title="{{ 'Disable account' if u.is_active else 'Enable account' }}">
+                        <i class="bi {{ 'bi-toggle-on text-success' if u.is_active else 'bi-toggle-off' }}"></i>
+                      </button>
+                    </form>
+                    <form method="post" action="{{ url_for('people.delete_user', uid=u.id) }}"
+                          data-confirm="Delete the account for {{ u.name }}?">
+                      <button class="btn btn-sm btn-light text-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editUser" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" method="post">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="edit-user-name">Full name</label>
+          <input class="form-control" id="edit-user-name" name="name" data-fill="name" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="edit-user-role">Role</label>
+          <select class="form-select" id="edit-user-role" name="role" data-fill="role">
+            <option value="staff">Staff / Cashier</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label" for="edit-user-password">New password</label>
+          <input class="form-control" id="edit-user-password" name="password" type="text"
+                 autocomplete="new-password" placeholder="Leave blank to keep the current one">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

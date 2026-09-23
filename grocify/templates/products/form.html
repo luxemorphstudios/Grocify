@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Add product' if mode == 'new' else 'Edit product' }}{% endblock %}
+
+{% block subheading %}{{ 'Add a new item to the catalogue'
+   if mode == 'new' else product.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9">
+    <form method="post" class="card" enctype="multipart/form-data" novalidate>
+      <div class="card-header">
+        <h2 class="card-title">
+          <i class="bi bi-box-seam me-1"></i>
+          {{ 'Product details' if mode == 'new' else 'Edit ' ~ product.name }}
+        </h2>
+      </div>
+
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label" for="name">Product name <span class="text-danger">*</span></label>
+            <input class="form-control" id="name" name="name" required
+                   value="{{ product.name or '' }}" placeholder="e.g. Amul Gold Milk 1L">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="unit">Unit</label>
+            <select class="form-select" id="unit" name="unit">
+              {% for u in UNITS %}
+                <option value="{{ u }}" {{ 'selected' if product.unit == u }}>{{ u }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="category_id">Category</label>
+            <select class="form-select" id="category_id" name="category_id">
+              <option value="">— none —</option>
+              {% for c in categories %}
+                <option value="{{ c.id }}"
+                  {{ 'selected' if product.category_id and product.category_id|string == c.id|string }}>
+                  {{ c.name }}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">
+              Manage the list on the <a href="{{ url_for('products.categories') }}">Categories</a> page.
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="supplier_id">Supplier</label>
+            <select class="form-select" id="supplier_id" name="supplier_id">
+              <option value="">— none —</option>
+              {% for s in suppliers %}
+                <option value="{{ s.id }}"
+                  {{ 'selected' if product.supplier_id and product.supplier_id|string == s.id|string }}>
+                  {{ s.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-12"><hr class="my-1" style="border-color: var(--line)"></div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="price">Selling price <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text">{{ shop.currency }}</span>
+              <input class="form-control" id="price" name="price" type="number" step="0.01"
+                     min="0" required value="{{ product.price if product.price is not none else '' }}">
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="cost_price">Purchase price</label>
+            <div class="input-group">
+              <span class="input-group-text">{{ shop.currency }}</span>
+              <input class="form-control" id="cost_price" name="cost_price" type="number"
+                     step="0.01" min="0"
+                     value="{{ product.cost_price if product.cost_price is not none else '' }}">
+            </div>
+            <div class="form-text">Used to work out profit later.</div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="quantity">Stock quantity</label>
+            <input class="form-control" id="quantity" name="quantity" type="number"
+                   step="any" min="0"
+                   value="{{ product.quantity if product.quantity is not none else 0 }}">
+            {% if mode == 'edit' %}
+              <div class="form-text">
+                For new deliveries use <a href="{{ url_for('products.stock') }}">Stock in</a> instead.
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="min_stock">Low-stock alert at</label>
+            <input class="form-control" id="min_stock" name="min_stock" type="number"
+                   step="any" min="0"
+                   value="{{ product.min_stock if product.min_stock is not none else 5 }}">
+            <div class="form-text">The dashboard warns you when stock drops to this level.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="expiry_date">Expiry date</label>
+            <input class="form-control" id="expiry_date" name="expiry_date" type="date"
+                   value="{{ product.expiry_date or '' }}">
+            <div class="form-text">Leave blank for items that do not expire.</div>
+          </div>
+
+          <div class="col-12"><hr class="my-1" style="border-color: var(--line)"></div>
+
+          <div class="col-12">
+            <label class="form-label" for="image">Product photo</label>
+            <div class="image-picker">
+              <div id="imagePreview">
+                {% if product.image %}
+                  <img class="thumb thumb-lg" alt="{{ product.name }}"
+                       src="{{ url_for('static', filename='uploads/products/' ~ product.image) }}">
+                {% else %}
+                  <span class="thumb thumb-lg thumb-fallback"
+                        style="--hue: {{ hue(product.name or 'New product') }}">
+                    {{ (product.name or 'N')[0]|upper }}
+                  </span>
+                {% endif %}
+              </div>
+
+              <div class="picker-fields">
+                <input class="form-control" type="file" id="image" name="image"
+                       accept="image/png,image/jpeg,image/gif,image/webp">
+                <div class="form-text">
+                  PNG, JPG, GIF or WEBP, up to 2 MB.
+                  {% if mode == 'edit' %}Leave this empty to keep the current photo.{% endif %}
+                  Products without a photo show a coloured initial instead.
+                </div>
+                {% if product.image %}
+                  <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" value="1"
+                           id="remove_image" name="remove_image">
+                    <label class="form-check-label" for="remove_image">
+                      Remove the current photo
+                    </label>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="card-header border-top border-bottom-0 justify-content-end">
+        <a class="btn btn-light" href="{{ url_for('products.index') }}">Cancel</a>
+        <button class="btn btn-primary" type="submit">
+          <i class="bi bi-check-lg me-1"></i>{{ 'Add product' if mode == 'new' else 'Save changes' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("image").addEventListener("change", function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var url = URL.createObjectURL(file);
+    document.getElementById("imagePreview").innerHTML =
+      '<img class="thumb thumb-lg" alt="" src="' + url + '">';
+    var remove = document.getElementById("remove_image");
+    if (remove) remove.checked = false;
+  });
+</script>
+{% endblock %}

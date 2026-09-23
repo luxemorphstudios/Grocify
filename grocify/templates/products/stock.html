@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Stock in{% endblock %}
+{% block subheading %}Record goods received from a supplier — stock is added automatically{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <div class="col-xl-4">
+    <form method="post" class="card">
+      <div class="card-header"><h2 class="card-title"><i class="bi bi-truck me-1"></i> Receive stock</h2></div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label" for="product_id">Product <span class="text-danger">*</span></label>
+          <select class="form-select" id="product_id" name="product_id" required>
+            <option value="">— choose a product —</option>
+            {% for p in products %}
+              <option value="{{ p.id }}" data-unit="{{ p.unit }}"
+                      data-stock="{{ p.quantity }}" data-cost="{{ p.cost_price }}">
+                {{ p.name }}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="form-text" id="stockHint">Current stock appears here once you pick a product.</div>
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label" for="quantity">Quantity <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input class="form-control" id="quantity" name="quantity" type="number"
+                     step="any" min="0.01" required placeholder="0">
+              <span class="input-group-text" id="unitLabel">unit</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="cost_price">Cost per unit</label>
+            <div class="input-group">
+              <span class="input-group-text">{{ shop.currency }}</span>
+              <input class="form-control" id="cost_price" name="cost_price" type="number"
+                     step="0.01" min="0" placeholder="0.00">
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="supplier_id">Supplier</label>
+          <select class="form-select" id="supplier_id" name="supplier_id">
+            <option value="">— none —</option>
+            {% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="expiry_date">New expiry date</label>
+          <input class="form-control" id="expiry_date" name="expiry_date" type="date">
+          <div class="form-text">Optional — updates the product's expiry date.</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="note">Note</label>
+          <input class="form-control" id="note" name="note" placeholder="Invoice no., remarks...">
+        </div>
+
+        <button class="btn btn-primary w-100" type="submit">
+          <i class="bi bi-box-arrow-in-down me-1"></i>Add to stock
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-xl-8">
+    <div class="card table-card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="bi bi-clock-history me-1"></i> Purchase history</h2>
+        <span class="chip ms-auto">Last {{ entries|length }} entries</span>
+      </div>
+
+      {% if entries %}
+        <div class="scroll-x">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Product</th>
+                <th class="d-none d-md-table-cell">Supplier</th>
+                <th class="num">Quantity</th>
+                <th class="num">Cost</th>
+                <th class="d-none d-lg-table-cell">Added by</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in entries %}
+                <tr>
+                  <td class="text-muted">{{ e.created_at|nice_date }}</td>
+                  <td>
+                    <div class="cell-title">{{ e.product }}</div>
+                    {% if e.note %}<div class="cell-sub">{{ e.note }}</div>{% endif %}
+                  </td>
+                  <td class="d-none d-md-table-cell">{{ e.supplier or '—' }}</td>
+                  <td class="num"><span class="chip chip-ok">+{{ e.quantity|qty }} {{ e.unit }}</span></td>
+                  <td class="num">
+                    <div class="fw-semibold">{{ (e.quantity * e.cost_price)|money }}</div>
+                    <div class="cell-sub">{{ e.cost_price|money }} / {{ e.unit }}</div>
+                  </td>
+                  <td class="d-none d-lg-table-cell text-muted">{{ e.added_by or '—' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty"><i class="bi bi-truck"></i><p>No stock has been received yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var select = document.getElementById("product_id");
+  select.addEventListener("change", function () {
+    var option = select.options[select.selectedIndex];
+    var unit = option.dataset.unit;
+    if (!unit) {
+      document.getElementById("stockHint").textContent =
+        "Current stock appears here once you pick a product.";
+      document.getElementById("unitLabel").textContent = "unit";
+      return;
+    }
+    document.getElementById("unitLabel").textContent = unit;
+    document.getElementById("stockHint").textContent =
+      "In stock now: " + Number(option.dataset.stock) + " " + unit;
+    if (!document.getElementById("cost_price").value) {
+      document.getElementById("cost_price").value = Number(option.dataset.cost) || "";
+    }
+  });
+</script>
+{% endblock %}
