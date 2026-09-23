@@ -63,9 +63,11 @@ on the server (`@admin_required`), not just hidden menu links.
 
 ### Accounts and passwords
 
-The sign-in page has a **Create an account** link. Anyone can register, choose
-**Staff / Cashier** or **Administrator**, and sign in straight afterwards. An
-administrator can also create accounts from the *Staff accounts* page.
+The sign-in page has a **Create an account** link. Anyone can register as
+**Staff / Cashier** and sign in straight afterwards. Registering as an
+**Administrator** also requires an administrator code (see below). An
+administrator can create accounts of either kind from the *Staff accounts*
+page without needing the code.
 
 A new password must be:
 
@@ -82,10 +84,35 @@ The seeded `admin` / `admin123` account predates these rules and still works --
 existing passwords are not forced to change. The moment that account sets a new
 password, the new rules apply.
 
-> **Worth knowing:** letting anyone register as an Administrator is convenient
-> for a class demo, but it means whoever can reach the app can give themselves
-> full control. For real use you would restrict the public form to Staff and
-> create admins only from the *Staff accounts* page.
+### The administrator code
+
+Staff sign-up is open, but nobody should be able to hand themselves full
+control of prices, stock and staff just by picking "Administrator" from a
+dropdown. So administrator sign-up is gated by a code:
+
+| Situation | What happens |
+|---|---|
+| The database has no administrator yet | The first account may be created as an administrator with no code. Without this, a fresh clone could never get its first admin. |
+| An administrator exists but no code is set | Administrator sign-up is refused entirely. Admins can still be created from the *Staff accounts* page. |
+| A code is set | It must be entered on the sign-up form and must match. |
+
+An administrator sets, replaces or clears the code in **Settings -> Administrator
+sign-up**. Clearing it turns administrator sign-up off again.
+
+Three details worth knowing, and worth saying in a viva:
+
+- **The code is stored as a hash**, using the same function as passwords. It is
+  never kept as readable text, so reading the database file does not reveal it.
+  It can be replaced but never read back - if it is forgotten, set a new one.
+- **It is not in the source code.** Putting a fixed code in a Python file would
+  be pointless here, because this repository is public - anyone could read it on
+  GitHub. Keeping it in the database means the secret never leaves the shop.
+- **Settings ending in `_hash` are filtered out** of the data passed to
+  templates, so the hash cannot be printed onto a page by accident.
+
+If you would rather not have public administrator sign-up at all, leave the code
+unset: the form then refuses every administrator registration, and admins are
+created only from the *Staff accounts* page.
 
 ### Product photos
 

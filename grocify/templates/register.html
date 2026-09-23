@@ -18,7 +18,8 @@
             products and prices</span></li>
         <li><i class="bi bi-shield-lock"></i>
           <span><strong>Administrator</strong> - everything above, plus stock,
-            suppliers, reports and staff accounts</span></li>
+            suppliers, reports and staff accounts. Needs an administrator
+            code.</span></li>
       </ul>
     </div>
     <small class="opacity-75">Grocery Store Management System</small>
@@ -74,6 +75,24 @@
           </select>
         </div>
 
+        <div class="mb-3 d-none" id="adminCodeRow">
+          <label class="form-label" for="admin_code">Administrator code</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+            <input class="form-control" id="admin_code" name="admin_code"
+                   autocomplete="off" placeholder="Ask an administrator for this">
+          </div>
+          <div class="form-text">
+            {% if admin_code_required %}
+              Creating an administrator account needs a code that an existing
+              administrator sets in Settings.
+            {% else %}
+              No administrator exists yet, so this first account can be created
+              without a code.
+            {% endif %}
+          </div>
+        </div>
+
         <div class="mb-3">
           <label class="form-label" for="password">Password</label>
           <div class="input-group">
@@ -117,6 +136,16 @@
 
 {% block scripts %}
 <script>
+  // The administrator code box only appears when that role is chosen.
+  var roleSelect = document.getElementById("role");
+  var adminCodeRow = document.getElementById("adminCodeRow");
+
+  function syncRole() {
+    adminCodeRow.classList.toggle("d-none", roleSelect.value !== "admin");
+  }
+  roleSelect.addEventListener("change", syncRole);
+  syncRole();
+
   document.getElementById("togglePassword").addEventListener("click", function () {
     var field = document.getElementById("password");
     var show = field.type === "password";

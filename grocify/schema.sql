@@ -117,4 +117,7 @@ INSERT INTO settings (key, value) VALUES
     ('shop_phone',      '+91 98765 43210'),
     ('currency',        '₹'),
     ('gst_rate',        '5'),
-    ('expiry_warn_days','7');
+    ('expiry_warn_days','7'),
+    -- Hash of the code needed to register an administrator from the sign-in
+    -- page. Empty means administrator sign-up is turned off.
+    ('admin_code_hash', '');

@@ -3,7 +3,7 @@ from flask import (Blueprint, flash, g, redirect, render_template, request,
                    session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..db import execute, now, query
+from ..db import execute, get_setting, now, query, scalar
 from ..helpers import login_required, validate_password, validate_username
 
 bp = Blueprint("auth", __name__)
@@ -36,6 +36,32 @@ def login():
     return render_template("login.html")
 
 
+def _admin_signup_error(code):
+    """Decide whether an administrator may be created from the public form.
+
+    Three cases:
+    1. No administrator exists yet (a freshly created database) - allow it, or
+       nobody could ever make the first one.
+    2. An administrator exists but no code has been set - administrator
+       sign-up is off, so refuse and say where to turn it on.
+    3. A code is set - it must match. The stored value is a hash, exactly like
+       a password, so the real code is nowhere in the database or the code.
+    """
+    if scalar("SELECT COUNT(*) FROM users WHERE role = 'admin'") == 0:
+        return None
+
+    stored = get_setting("admin_code_hash", "")
+    if not stored:
+        return ("Administrator sign-up is turned off. Ask an administrator to "
+                "set an administrator code in Settings, or to create the "
+                "account for you from the Staff accounts page.")
+    if not code:
+        return "Please enter the administrator code."
+    if not check_password_hash(stored, code):
+        return "That administrator code is not correct."
+    return None
+
+
 @bp.route("/register", methods=("GET", "POST"))
 def register():
     """Anyone can create an account from the sign-in page."""
@@ -64,6 +90,8 @@ def register():
             if error is None and query("SELECT 1 FROM users WHERE username = ?",
                                        (form["username"],), one=True):
                 error = "That username is already taken. Please pick another."
+            if error is None and form["role"] == "admin":
+                error = _admin_signup_error(request.form.get("admin_code", ""))
 
         if error:
             flash(error, "danger")
@@ -78,7 +106,12 @@ def register():
             flash("Account created. You can sign in now.", "success")
             return redirect(url_for("auth.login"))
 
-    return render_template("register.html", form=form)
+    return render_template(
+        "register.html", form=form,
+        # Tells the page whether to explain that a code will be needed.
+        admin_code_required=scalar(
+            "SELECT COUNT(*) FROM users WHERE role = 'admin'") > 0,
+    )
 
 
 @bp.route("/logout")

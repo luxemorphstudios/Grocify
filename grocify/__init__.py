@@ -57,7 +57,10 @@ def create_app(test_config=None):
     def inject_globals():
         shop = {}
         try:
-            shop = db.get_settings()
+            # Anything ending in _hash is a secret, so it never reaches a
+            # template where it could be printed by accident.
+            shop = {k: v for k, v in db.get_settings().items()
+                    if not k.endswith("_hash")}
         except Exception:          # database not created yet
             pass
         return {"shop": shop, "app_version": __version__}

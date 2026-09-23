@@ -137,7 +137,7 @@ def date_range(days=7):
 PASSWORD_MIN_LENGTH = 8
 
 
-def validate_password(password, confirm=None):
+def validate_password(password, confirm=None, what="password"):
     """Check a new password against the rules. Returns an error, or None.
 
     The rules are deliberately checked here on the server. The sign-up form
@@ -145,13 +145,13 @@ def validate_password(password, confirm=None):
     user can edit the page, so the server has to decide.
     """
     if len(password or "") < PASSWORD_MIN_LENGTH:
-        return ("The password must be at least %d characters long."
-                % PASSWORD_MIN_LENGTH)
+        return ("The %s must be at least %d characters long."
+                % (what, PASSWORD_MIN_LENGTH))
     if not any(not ch.isalnum() and not ch.isspace() for ch in password):
-        return ("The password must include at least one special character, "
-                "for example ! @ # $ % or &.")
+        return ("The %s must include at least one special character, "
+                "for example ! @ # $ %% or &." % what)
     if confirm is not None and password != confirm:
-        return "The two passwords do not match."
+        return "The two %ss do not match." % what
     return None
 
 

@@ -54,6 +54,56 @@
         </div>
       </div>
 
+      <div class="card-header border-top">
+        <h2 class="card-title"><i class="bi bi-shield-lock me-1"></i> Administrator sign-up</h2>
+        {% if admin_code_set %}
+          <span class="chip chip-ok ms-auto">Code is set</span>
+        {% else %}
+          <span class="chip chip-warn ms-auto">Sign-up turned off</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-3">
+          Anyone can sign up as staff. To create an <strong>administrator</strong>
+          account from the sign-in page, they must also enter this code, so give
+          it only to people who should have full access.
+          {% if not admin_code_set %}
+            While no code is set, administrator sign-up is refused entirely and
+            admins can only be created here on the Staff accounts page.
+          {% endif %}
+        </p>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="admin_code">
+              {{ 'Replace the code' if admin_code_set else 'Set a code' }}
+            </label>
+            <input class="form-control" id="admin_code" name="admin_code"
+                   type="text" autocomplete="off"
+                   placeholder="At least 8 characters and one special character">
+            <div class="form-text">
+              The code is stored as a hash, exactly like a password, so it can be
+              replaced but never read back. Leave this empty to keep the current
+              one.
+            </div>
+          </div>
+
+          <div class="col-md-6 d-flex align-items-center">
+            {% if admin_code_set %}
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="1"
+                       id="clear_admin_code" name="clear_admin_code">
+                <label class="form-check-label" for="clear_admin_code">
+                  Turn administrator sign-up off<br>
+                  <small class="text-muted">Clears the code. Existing
+                    administrators are not affected.</small>
+                </label>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
       <div class="card-header border-top border-bottom-0 justify-content-end">
         <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i>Save settings</button>
       </div>

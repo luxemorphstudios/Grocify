@@ -3,7 +3,7 @@ from flask import (Blueprint, abort, flash, g, redirect, render_template,
                    request, url_for)
 from werkzeug.security import generate_password_hash
 
-from ..db import execute, now, query, save_setting, scalar
+from ..db import execute, get_setting, now, query, save_setting, scalar
 from ..helpers import admin_required, parse_float, validate_password, validate_username
 
 bp = Blueprint("people", __name__)
@@ -191,7 +191,27 @@ def settings():
         save_setting("gst_rate", max(parse_float(request.form.get("gst_rate")), 0))
         save_setting("expiry_warn_days",
                      int(max(parse_float(request.form.get("expiry_warn_days"), 7), 1)))
+
+        # The administrator code is a credential, so it is hashed and can only
+        # be replaced or cleared - never read back.
+        if request.form.get("clear_admin_code"):
+            save_setting("admin_code_hash", "")
+            flash("Administrator sign-up turned off.", "info")
+        else:
+            new_code = request.form.get("admin_code", "")
+            if new_code:
+                problem = validate_password(new_code, what="administrator code")
+                if problem:
+                    flash(problem + " The code was not changed.", "warning")
+                else:
+                    save_setting("admin_code_hash", generate_password_hash(new_code))
+                    flash("Administrator code updated.", "success")
+
         flash("Settings saved.", "success")
         return redirect(url_for("people.settings"))
 
-    return render_template("people/settings.html")
+    return render_template(
+        "people/settings.html",
+        admin_code_set=bool(get_setting("admin_code_hash", "")),
+        admin_count=scalar("SELECT COUNT(*) FROM users WHERE role = 'admin'"),
+    )
